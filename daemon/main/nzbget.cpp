@@ -74,7 +74,7 @@
 #include <iostream>
 #endif
 
-#include <locale>
+#include <string>
 
 // Prototypes
 void RunMain();
