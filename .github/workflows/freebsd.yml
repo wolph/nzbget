@@ -6,8 +6,8 @@ on:
 
 env:
   BUILD_ARCHS: "x86_64-bsd"
-  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'release debug' || 'release' }}
-  BUILD_TESTING: ${{ (github.ref_name != 'main') && 'testing' || '' }}
+  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'release debug' || 'release debug' }}
+  BUILD_TESTING: ''
 
 jobs:
   build:
@@ -44,16 +44,16 @@ jobs:
         path: build/*/build.log
         retention-days: 5
 
-    - name: Rename build artifacts
-      if: github.ref_name != 'main' && github.ref_name != 'develop'
-      run: |
-        cd build
-        SUFFIX="-${GITHUB_REF_NAME/\//-}-bin-freebsd"
-        for FILE in *.run; do
-          [ -f $FILE ] || continue
-          NEW_FILE=${FILE/-bin-freebsd/$SUFFIX}
-          mv $FILE $NEW_FILE
-        done
+    # - name: Rename build artifacts
+    #   if: github.ref_name != 'main' && github.ref_name != 'develop'
+    #   run: |
+    #     cd build
+    #     SUFFIX="-${GITHUB_REF_NAME/\//-}-bin-freebsd"
+    #     for FILE in *.run; do
+    #       [ -f $FILE ] || continue
+    #       NEW_FILE=${FILE/-bin-freebsd/$SUFFIX}
+    #       mv $FILE $NEW_FILE
+    #     done
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7

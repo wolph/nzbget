@@ -6,8 +6,8 @@ on:
 
 env:
   BUILD_ARCHS: '32 64'
-  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'Release Debug' || 'Release' }}
-  BUILD_TESTING: ${{ (github.ref_name != 'main') && '-BuildTesting' || '' }}
+  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'Release Debug' || 'Release Debug' }}
+  BUILD_TESTING: ''
   SIGN: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'true' || 'false' }}
   SIGNING_POLICY: 'release-signing'
 
@@ -120,14 +120,14 @@ jobs:
     - name: Build nzbget windows installer
       run: Invoke-Expression "windows\build-nzbget.ps1 -BuildSetup ${{ needs.prepare-build-matrix.outputs.build-args }}"
 
-    - name: Rename build artifacts
-      if: github.ref_name != 'main' && github.ref_name != 'develop'
-      run: |
-        $Output="build"
-        $Suffix = $env:GITHUB_REF_NAME.Replace("/","-")
-        ForEach ($File In Get-ChildItem -Path $Output -Filter "*.exe") {
-          Rename-Item -Path "$Output\$($File.Name)" -NewName $File.Name.Replace("-bin-windows-", "-$Suffix-bin-windows-")
-        }
+    # - name: Rename build artifacts
+    #   if: github.ref_name != 'main' && github.ref_name != 'develop'
+    #   run: |
+    #     $Output="build"
+    #     $Suffix = $env:GITHUB_REF_NAME.Replace("/","-")
+    #     ForEach ($File In Get-ChildItem -Path $Output -Filter "*.exe") {
+    #       Rename-Item -Path "$Output\$($File.Name)" -NewName $File.Name.Replace("-bin-windows-", "-$Suffix-bin-windows-")
+    #     }
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7

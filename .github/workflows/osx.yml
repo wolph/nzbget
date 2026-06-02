@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
 
 env:
-  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'release debug' || 'release' }}
-  BUILD_TESTING: ${{ (github.ref_name != 'main') && 'testing' || '' }}
+  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'release debug' || 'release debug' }}
+  BUILD_TESTING: ''
 
 jobs:
   build-x64:
@@ -36,16 +36,16 @@ jobs:
         path: build/*/build.log
         retention-days: 5
 
-    - name: Rename build artifacts
-      if: github.ref_name != 'main' && github.ref_name != 'develop'
-      run: |
-        cd build
-        SUFFIX="${GITHUB_REF_NAME/\//-}"
-        for FILE in *.zip; do
-          [ -f $FILE ] || continue
-          NEW_FILE=${FILE/-bin-macos-x64/-$SUFFIX-bin-macos-x64}
-          mv $FILE $NEW_FILE
-        done
+    # - name: Rename build artifacts
+    #   if: github.ref_name != 'main' && github.ref_name != 'develop'
+    #   run: |
+    #     cd build
+    #     SUFFIX="${GITHUB_REF_NAME/\//-}"
+    #     for FILE in *.zip; do
+    #       [ -f $FILE ] || continue
+    #       NEW_FILE=${FILE/-bin-macos-x64/-$SUFFIX-bin-macos-x64}
+    #       mv $FILE $NEW_FILE
+    #     done
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7
@@ -78,16 +78,16 @@ jobs:
         path: build/*/build.log
         retention-days: 5
 
-    - name: Rename build artifacts
-      if: github.ref_name != 'main' && github.ref_name != 'develop'
-      run: |
-        cd build
-        SUFFIX="${GITHUB_REF_NAME/\//-}"
-        for FILE in *.zip; do
-          [ -f $FILE ] || continue
-          NEW_FILE=${FILE/-bin-macos-universal/-$SUFFIX-bin-macos-universal}
-          mv $FILE $NEW_FILE
-        done
+    # - name: Rename build artifacts
+    #   if: github.ref_name != 'main' && github.ref_name != 'develop'
+    #   run: |
+    #     cd build
+    #     SUFFIX="${GITHUB_REF_NAME/\//-}"
+    #     for FILE in *.zip; do
+    #       [ -f $FILE ] || continue
+    #       NEW_FILE=${FILE/-bin-macos-universal/-$SUFFIX-bin-macos-universal}
+    #       mv $FILE $NEW_FILE
+    #     done
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7

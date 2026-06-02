@@ -6,8 +6,8 @@ on:
 
 env:
   BUILD_ARCHS: "aarch64-ndk armhf-ndk i686-ndk x86_64-ndk"
-  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'release debug' || 'release' }}
-  BUILD_TESTING: ${{ (github.ref_name != 'main') && 'testing' || '' }}
+  BUILD_TYPES: ${{ (github.ref_name == 'develop' || github.ref_name == 'main') && 'release debug' || 'release debug' }}
+  BUILD_TESTING: ''
 
 jobs:
 
@@ -99,16 +99,16 @@ jobs:
         done
         bash linux/build-nzbget.sh android installer ${{ env.BUILD_TYPES }} ${{ env.BUILD_TESTING }}
 
-    - name: Rename build artifacts
-      if: github.ref_name != 'main' && github.ref_name != 'develop'
-      run: |
-        cd build
-        SUFFIX="-${GITHUB_REF_NAME/\//-}-bin-android"
-        for FILE in *.run; do
-          [ -f $FILE ] || continue
-          NEW_FILE=${FILE/-bin-android/$SUFFIX}
-          mv $FILE $NEW_FILE
-        done
+    # - name: Rename build artifacts
+    #   if: github.ref_name != 'main' && github.ref_name != 'develop'
+    #   run: |
+    #     cd build
+    #     SUFFIX="-${GITHUB_REF_NAME/\//-}-bin-android"
+    #     for FILE in *.run; do
+    #       [ -f $FILE ] || continue
+    #       NEW_FILE=${FILE/-bin-android/$SUFFIX}
+    #       mv $FILE $NEW_FILE
+    #     done
 
     - name: Delete unneeded platform-specific artifacts
       uses: geekyeggo/delete-artifact@v6
