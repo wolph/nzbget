@@ -343,4 +343,9 @@ void Scheduler::CheckScheduledResume()
 		g_WorkState->SetPausePostProcess(false);
 		g_WorkState->SetPauseScan(false);
 	}
+
+	if (g_WorkState->CheckSpeedLimitRevert(currentTime))
+	{
+		info("Reverting speed limit to %i KB/s", g_WorkState->GetSpeedLimit() / 1024);
+	}
 }

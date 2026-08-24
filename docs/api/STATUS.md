@@ -51,6 +51,8 @@ This method returns structure with following fields:
 - **ScanPaused** `(bool)` - `true` if the scanning of incoming nzb-directory is currently in paused-state.
 - **ServerTime** `(int)` - Current time on computer running NZBGet. Time is in C/Unix format (number of seconds since 00:00:00 UTC, January 1, 1970).
 - **ResumeTime** `(int)` - Time to resume if set with method `scheduleresume`. Time is in C/Unix format.
+- **SpeedLimitResetTime** `(int)` - `v26.3` Time (in unix time format) when a timed speed limit reverts, or `0` if no timed limit is active. See method `rate`.
+- **PrevDownloadLimit** `(int)` - `v26.3` Download limit (in Bytes per Second) that will be restored when the timed speed limit expires. `0` means no limit. Only meaningful when SpeedLimitResetTime is nonzero.
 - **FeedActive** `(bool)` - `true` if any RSS feed is being fetched right now.
 - **FreeDiskSpaceLo** `(int)` - Free disk space on `DestDir`, in bytes. This field contains the low 32-bits of 64-bit value
 - **FreeDiskSpaceHi** `(int)` - Free disk space on `DestDir`, in bytes. This field contains the high 32-bits of 64-bit value

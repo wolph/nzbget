@@ -25,3 +25,16 @@ void WorkState::Changed()
 {
 	Notify(nullptr);
 }
+
+bool WorkState::CheckSpeedLimitRevert(time_t now)
+{
+	if (m_speedLimitResetTime == 0 || now < m_speedLimitResetTime)
+	{
+		return false;
+	}
+	m_speedLimit = m_speedLimitRestoreValue.load();
+	m_speedLimitResetTime = 0;
+	m_speedLimitRestoreValue = 0;
+	Changed();
+	return true;
+}

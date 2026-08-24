@@ -40,8 +40,21 @@ public:
 	bool GetTempPausePostprocess() const { return m_tempPausePostprocess; }
 	void SetPauseFrontend(bool pauseFrontend) { m_pauseFrontend = pauseFrontend; Changed(); }
 	bool GetPauseFrontend() const { return m_pauseFrontend; }
-	void SetSpeedLimit(int speedLimit) { m_speedLimit = speedLimit; Changed(); }
+	void SetSpeedLimit(int speedLimit) { m_speedLimit = speedLimit; m_speedLimitResetTime = 0; m_speedLimitRestoreValue = 0; Changed(); }
 	int GetSpeedLimit() const { return m_speedLimit; }
+	void SetTimedSpeedLimit(int speedLimit, time_t resetTime)
+	{
+		if (m_speedLimitResetTime == 0)
+		{
+			m_speedLimitRestoreValue = m_speedLimit.load();
+		}
+		m_speedLimit = speedLimit;
+		m_speedLimitResetTime = resetTime;
+		Changed();
+	}
+	bool CheckSpeedLimitRevert(time_t now);
+	time_t GetSpeedLimitResetTime() const { return m_speedLimitResetTime; }
+	int GetSpeedLimitRestoreValue() const { return m_speedLimitRestoreValue; }
 	void SetResumeTime(time_t resumeTime) { m_resumeTime = resumeTime; Changed(); }
 	time_t GetResumeTime() const { return m_resumeTime; }
 	void SetLocalTimeOffset(int localTimeOffset) { m_localTimeOffset = localTimeOffset; Changed(); }
@@ -55,6 +68,8 @@ private:
 	std::atomic<time_t> m_resumeTime{0};
 	std::atomic<int> m_localTimeOffset{0};
 	std::atomic<int> m_speedLimit{0};
+	std::atomic<time_t> m_speedLimitResetTime{0};
+	std::atomic<int> m_speedLimitRestoreValue{0};
 	std::atomic<bool> m_tempPauseDownload{true};
 	std::atomic<bool> m_tempPausePostprocess{true};
 	std::atomic<bool> m_pauseDownload{false};

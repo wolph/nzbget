@@ -62,6 +62,10 @@
     "message": "Quick help",
     "description": "Button label for quick help (usually related to search/filter syntax)"
   },
+  "status_speed_revert_hint": {
+    "message": "Speed limit reverts to $1 in $2",
+    "description": "Tooltip for the speed indicator while a timed speed limit is active. $1 is the restored limit, $2 the remaining time. $1 and $2 are dynamic values"
+  },
   "status_speed_title": {
     "message": "Current speed (click to set speed limit) $1",
     "description": "Tooltip for speed indicator. $1 is a placeholder for the keyboard shortcut. $1 is a dynamic value/HTML tag"
@@ -1170,6 +1174,10 @@
     "message": "Speed Limit",
     "description": "Title for the speed limit dialog"
   },
+  "limit_dialog_presets": {
+    "message": "Presets",
+    "description": "Label for the speed limit preset buttons"
+  },
   "limit_dialog_speed_limit": {
     "message": "Speed limit",
     "description": "Label for speed limit input"
@@ -1181,6 +1189,10 @@
   "limit_dialog_set_limit": {
     "message": "Set limit",
     "description": "Button label to apply speed limit"
+  },
+  "limit_dialog_duration": {
+    "message": "Time limit",
+    "description": "Label for the optional speed limit duration input (minutes)"
   },
   "pause_dialog_title": {
     "message": "Temporary Pause",
@@ -4277,6 +4289,10 @@
   "config_desc_feed_certverification": {
     "message": "Certificate verification level.\n\nNone - NO certificate signing check, NO certificate hostname check\n\nMinimal - certificate signing check, NO certificate hostname check\n\nStrict - certificate signing check, certificate hostname check",
     "description": "Description for the option Feed1.CertVerification DO NOT translate configuration option values (Minimal, None, Strict) as they are fixed configuration values."
+  },
+  "config_desc_speedlimitpresets": {
+    "message": "Preset speed limits offered in the web-interface.\n\nComma-separated list of download speed limits for quick selection in\nthe speed limit dialog, for example \"1000,5000,20000\".\n\nLeave empty to hide the preset buttons.",
+    "description": "Description for the option SpeedLimitPresets DO NOT translate technical values enclosed in quotes."
   },
   "help_feed_filter_options_def": {
     "message": "Definition of an option: $1name:value$2",

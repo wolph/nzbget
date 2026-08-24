@@ -117,12 +117,6 @@ public:
 	void Execute() override;
 };
 
-class SetDownloadRateXmlCommand final : public XmlCommand
-{
-public:
-	void Execute() override;
-};
-
 class StatusXmlCommand final : public SafeXmlCommand
 {
 public:
@@ -1396,6 +1390,7 @@ void DumpDebugXmlCommand::Execute()
 	BuildBoolResponse(true);
 }
 
+// bool rate(int Limit, int DurationSec)
 void SetDownloadRateXmlCommand::Execute()
 {
 	int rate = 0;
@@ -1405,7 +1400,21 @@ void SetDownloadRateXmlCommand::Execute()
 		return;
 	}
 
-	g_WorkState->SetSpeedLimit(rate * 1024);
+	int duration = 0;
+	if (NextParamAsInt(&duration))
+	{
+		if (duration <= 0)
+		{
+			BuildErrorResponse(2, "Invalid parameter");
+			return;
+		}
+		g_WorkState->SetTimedSpeedLimit(rate * 1024, Util::CurrentTime() + duration);
+	}
+	else
+	{
+		g_WorkState->SetSpeedLimit(rate * 1024);
+	}
+
 	BuildBoolResponse(true);
 }
 
@@ -1465,6 +1474,8 @@ void StatusXmlCommand::Execute()
 		"<member><name>TotalInterDiskSpaceMB</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ServerTime</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>ResumeTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>SpeedLimitResetTime</name><value><i4>%i</i4></value></member>\n"
+		"<member><name>PrevDownloadLimit</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>FeedActive</name><value><boolean>%s</boolean></value></member>\n"
 		"<member><name>QueueScriptCount</name><value><i4>%i</i4></value></member>\n"
 		"<member><name>NewsServers</name><value><array><data>\n";
@@ -1527,6 +1538,8 @@ void StatusXmlCommand::Execute()
 		"\"TotalInterDiskSpaceMB\" : %i,\n"
 		"\"ServerTime\" : %i,\n"
 		"\"ResumeTime\" : %i,\n"
+		"\"SpeedLimitResetTime\" : %i,\n"
+		"\"PrevDownloadLimit\" : %i,\n"
 		"\"FeedActive\" : %s,\n"
 		"\"QueueScriptCount\" : %i,\n"
 		"\"NewsServers\" : [\n";
@@ -1660,6 +1673,8 @@ void StatusXmlCommand::Execute()
 
 	int serverTime = (int)Util::CurrentTime();
 	int resumeTime = (int)g_WorkState->GetResumeTime();
+	int speedLimitResetTime = (int)g_WorkState->GetSpeedLimitResetTime();
+	int prevDownloadLimit = g_WorkState->GetSpeedLimitRestoreValue();
 	bool feedActive = g_FeedCoordinator->HasActiveDownloads();
 	int queuedScripts = g_QueueScriptCoordinator->GetQueueSize();
 
@@ -1692,6 +1707,8 @@ void StatusXmlCommand::Execute()
 		totalInterDiskSpaceMB,
 		serverTime,
 		resumeTime,
+		speedLimitResetTime,
+		prevDownloadLimit,
 		BoolToStr(feedActive),
 		queuedScripts
 	);

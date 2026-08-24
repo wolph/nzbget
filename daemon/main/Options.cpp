@@ -297,6 +297,7 @@ void Options::InitDefaults()
 #endif
 	SetOption(DUPECHECK.data(), "yes");
 	SetOption(DOWNLOADRATE.data(), "0");
+	SetOption(SPEEDLIMITPRESETS.data(), "");
 	SetOption(CONTROLIP.data(), "0.0.0.0");
 	SetOption(CONTROLUSERNAME.data(), "nzbget");
 	SetOption(CONTROLPASSWORD.data(), "tegbzn6789");

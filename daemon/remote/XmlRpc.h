@@ -135,4 +135,10 @@ protected:
 	int JsonStep(const char* param, int len);
 };
 
+class SetDownloadRateXmlCommand final : public XmlCommand
+{
+public:
+	void Execute() override;
+};
+
 #endif

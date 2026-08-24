@@ -154,6 +154,21 @@ var Status = (new function($)
 		subscribers.forEach(function(sub) { sub.update(status); });
 	}
 
+	function updateSpeedLimitTooltip()
+	{
+		if (status.SpeedLimitResetTime > 0)
+		{
+			var revertTo = status.PrevDownloadLimit > 0 ?
+				Util.formatSpeed(status.PrevDownloadLimit) : I18n.translate('label_none');
+			$StatusSpeed.attr('title', I18n.translate('status_speed_revert_hint',
+				revertTo, Util.formatTimeLeft(Math.max(0, status.SpeedLimitResetTime - status.ServerTime))));
+		}
+		else
+		{
+			$StatusSpeed.removeAttr('title');
+		}
+	}
+
 	function redrawInfo()
 	{
 		$CHPauseDownload.text(status.DownloadPaused ? 'check_box' : 'check_box_outline_blank').show();
@@ -169,6 +184,8 @@ var Status = (new function($)
 		var m = I18n.translate('time_minutes_short');
 		var timeEmpty = '--' + h + ' --' + m;
 		var timeZero = '0' + h + ' 0' + m;
+
+		updateSpeedLimitTooltip();
 
 		if (status.ServerStandBy)
 		{
@@ -1542,14 +1559,84 @@ var LimitDialog = (new function($)
 	var $LimitDialog;
 	var $ServerTable;
 	var $LimitDialog_SpeedInput;
+	var $LimitDialog_DurationInput;
 
 	// State
 	var changed;
+	var shownDurationValue;
+	// exact string/KB pair last programmatically written into the speed input,
+	// so save() can detect an untouched field without a lossy unit round-trip
+	var filledValue;
+	var filledKB;
+
+	function useBits()
+	{
+		return I18n.getSpeedUnit() === 'Mb/s';
+	}
+
+	function bytesToInput(bytesPerSec)
+	{
+		var val = useBits() ? bytesPerSec * 8 / 1000 / 1000 : bytesPerSec / 1024 / 1024;
+		return Math.round(val * 100) / 100;
+	}
+
+	function inputToKilobytes(value)
+	{
+		return Math.round(useBits() ? value * 1000 * 1000 / 8 / 1024 : value * 1024);
+	}
+
+	function remainingMinutes()
+	{
+		var status = Status.status;
+		if (!status || !(status.SpeedLimitResetTime > 0))
+		{
+			return 0;
+		}
+		return Math.max(1, Math.ceil((status.SpeedLimitResetTime - status.ServerTime) / 60));
+	}
+
+	function updatePresets()
+	{
+		var conf = Options.option('SpeedLimitPresets') || '';
+		var presets = [];
+		conf.split(',').forEach(function(entry)
+		{
+			var trimmed = entry.trim();
+			if (/^\d+$/.test(trimmed))
+			{
+				var kb = parseInt(trimmed, 10);
+				if (kb > 0)
+				{
+					presets.push(kb);
+				}
+			}
+		});
+
+		Util.show('#LimitDialog_PresetBlock', presets.length > 0);
+		var $container = $('#LimitDialog_PresetButtons').empty();
+		presets.forEach(function(kb)
+		{
+			$('<button type="button" class="btn btn-default"></button>')
+				.text(Util.formatSpeed(kb * 1024))
+				.click(function(e)
+				{
+					e.preventDefault();
+					var filled = bytesToInput(kb * 1024);
+					$LimitDialog_SpeedInput.val(filled);
+					filledKB = kb;
+					filledValue = '' + filled;
+					$('.btn', $container).removeClass('btn-active');
+					$(this).addClass('btn-active');
+				})
+				.appendTo($container);
+		});
+	}
 
 	this.init = function()
 	{
 		$LimitDialog = $('#LimitDialog');
 		$LimitDialog_SpeedInput = $('#LimitDialog_SpeedInput');
+		$LimitDialog_DurationInput = $('#LimitDialog_DurationInput');
 		$('#LimitDialog_Save').click(save);
 		$ServerTable = $('#LimitDialog_ServerTable');
 
@@ -1592,8 +1679,15 @@ var LimitDialog = (new function($)
 		if (!Status.status) {
 			return;
 		}
-		var rate = Util.round0(Status.status.DownloadLimit / 1024);
-		$LimitDialog_SpeedInput.val(rate > 0 ? rate : '');
+		var limit = Status.status.DownloadLimit;
+		filledKB = Util.round0(Status.status.DownloadLimit / 1024);
+		filledValue = limit > 0 ? '' + bytesToInput(limit) : '';
+		$LimitDialog_SpeedInput.val(filledValue);
+		$('#LimitDialog_SpeedUnit').text(I18n.getSpeedUnit());
+		var minutes = remainingMinutes();
+		shownDurationValue = minutes > 0 ? '' + minutes : '';
+		$LimitDialog_DurationInput.val(shownDurationValue);
+		updatePresets();
 		updateTable();
 		$LimitDialog.modal({backdrop: 'static'});
 	}
@@ -1627,16 +1721,30 @@ var LimitDialog = (new function($)
 		if (!Status.status || !Status.status.NewsServers) {
 			return;
 		}
-		var val = $LimitDialog_SpeedInput.val();
+		var val = $LimitDialog_SpeedInput.val().trim();
 		var rate = 0;
-		if (val == '')
+		if (val !== '')
 		{
-			rate = 0;
+			if (val === filledValue)
+			{
+				rate = filledKB;
+			}
+			else
+			{
+				rate = inputToKilobytes(parseFloat(val));
+				if (isNaN(rate) || rate < 0)
+				{
+					return;
+				}
+			}
 		}
-		else
+
+		var durVal = $LimitDialog_DurationInput.val().trim();
+		var duration = 0;
+		if (durVal !== '')
 		{
-			rate = parseInt(val);
-			if (isNaN(rate))
+			duration = parseInt(durVal, 10);
+			if (isNaN(duration) || duration <= 0)
 			{
 				return;
 			}
@@ -1655,10 +1763,11 @@ var LimitDialog = (new function($)
 			}
 		}
 
-		saveLimit(rate, servers);
+		var oldDuration = shownDurationValue === '' ? 0 : parseInt(shownDurationValue, 10);
+		saveLimit(rate, duration, oldDuration, servers);
 	}
 
-	function saveLimit(rate, servers)
+	function saveLimit(rate, duration, oldDuration, servers)
 	{
 		if (!Status.status) {
 			return;
@@ -1682,10 +1791,11 @@ var LimitDialog = (new function($)
 		changed = false;
 		var oldRate = Util.round0(Status.status.DownloadLimit / 1024);
 
-		if (rate != oldRate)
+		if (rate != oldRate || duration != oldDuration)
 		{
 			changed = true;
-			RPC.call('rate', [rate], function()
+			var params = duration > 0 ? [rate, duration * 60] : [rate];
+			RPC.call('rate', params, function()
 			{
 				saveServers();
 			});
@@ -1733,7 +1843,7 @@ var LimitDialog = (new function($)
 			}
 		}
 
-		saveLimit(rate, servers);
+		saveLimit(rate, 0, remainingMinutes(), servers);
 	}
 }(jQuery));
 

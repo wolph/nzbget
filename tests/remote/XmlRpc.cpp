@@ -22,6 +22,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include "XmlRpc.h"
+#include "WorkState.h"
+#include "Util.h"
 
 BOOST_AUTO_TEST_SUITE(RemoteTest)
 
@@ -288,6 +290,54 @@ BOOST_AUTO_TEST_CASE(TestWhitespaceAfterLastParam)
 		BOOST_CHECK_EQUAL(std::string(val), "abc");
 		BOOST_CHECK(!cmd.TestNextParamAsStr(&val));
 	}
+}
+
+BOOST_AUTO_TEST_CASE(RateCommandWithoutDuration)
+{
+	g_WorkState->SetSpeedLimit(0);
+
+	std::string jsonInput = R"({"method":"rate","params":[1000],"id":1})";
+	SetDownloadRateXmlCommand cmd;
+	cmd.SetRequest(&jsonInput[0]);
+	cmd.SetProtocol(XmlRpcProcessor::rpJsonRpc);
+	cmd.SetHttpMethod(XmlRpcProcessor::hmPost);
+	cmd.PrepareParams();
+	cmd.Execute();
+
+	BOOST_CHECK_EQUAL(g_WorkState->GetSpeedLimit(), 1000 * 1024);
+	BOOST_CHECK_EQUAL(g_WorkState->GetSpeedLimitResetTime(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(RateCommandWithDuration)
+{
+	g_WorkState->SetSpeedLimit(2048 * 1024);
+
+	std::string jsonInput = R"({"method":"rate","params":[1000,120],"id":1})";
+	SetDownloadRateXmlCommand cmd;
+	cmd.SetRequest(&jsonInput[0]);
+	cmd.SetProtocol(XmlRpcProcessor::rpJsonRpc);
+	cmd.SetHttpMethod(XmlRpcProcessor::hmPost);
+	cmd.PrepareParams();
+
+	time_t before = Util::CurrentTime();
+	cmd.Execute();
+	time_t after = Util::CurrentTime();
+
+	BOOST_CHECK_EQUAL(g_WorkState->GetSpeedLimit(), 1000 * 1024);
+	BOOST_CHECK_EQUAL(g_WorkState->GetSpeedLimitRestoreValue(), 2048 * 1024);
+	BOOST_CHECK(g_WorkState->GetSpeedLimitResetTime() >= before + 120);
+	BOOST_CHECK(g_WorkState->GetSpeedLimitResetTime() <= after + 120);
+
+	std::string jsonInput2 = R"({"method":"rate","params":[500],"id":1})";
+	SetDownloadRateXmlCommand cmd2;
+	cmd2.SetRequest(&jsonInput2[0]);
+	cmd2.SetProtocol(XmlRpcProcessor::rpJsonRpc);
+	cmd2.SetHttpMethod(XmlRpcProcessor::hmPost);
+	cmd2.PrepareParams();
+	cmd2.Execute();
+
+	BOOST_CHECK_EQUAL(g_WorkState->GetSpeedLimit(), 500 * 1024);
+	BOOST_CHECK_EQUAL(g_WorkState->GetSpeedLimitResetTime(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
